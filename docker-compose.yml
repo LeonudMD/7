@@ -1,0 +1,106 @@
+services:
+  Eventure-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventuredb
+    ports:
+      - "5432:5432"
+    networks:
+      - bridge-network
+    volumes:
+      - postgres_data_eventure:/var/lib/postgresql/data 
+  Auth-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: authdb
+    ports:
+      - "5433:5432"
+    networks:
+      - bridge-network
+    volumes:
+      - postgres_data_auth:/var/lib/postgresql/data
+  EventService-redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - bridge-network
+  eventure.api:
+    image: ${DOCKER_REGISTRY-}eventureapi
+    build:
+      context: .
+      dockerfile: Eventure.API/Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - bridge-network
+    depends_on:
+      - authservice.api
+  authservice.api:
+    image: ${DOCKER_REGISTRY-}authserviceapi
+    build:
+      context: .
+      dockerfile: AuthService.API/Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - bridge-network
+  emailservice.api:
+    image: ${DOCKER_REGISTRY-}emailserviceapi
+    build:
+      context: .
+      dockerfile: EmailService.API/Dockerfile
+    networks:
+      - bridge-network
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - bridge-network
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - bridge-network
+  api-gateway:
+    image: ${DOCKER_REGISTRY-}apigateway
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "5000:80" 
+    networks:
+      - bridge-network
+    depends_on:
+      - eventure.api
+      - authservice.api
+      - emailservice.api
+  
+  
+volumes:
+   postgres_data_eventure:
+   postgres_data_auth:
+
+networks:
+  bridge-network:
+     driver: bridge
+
+
+

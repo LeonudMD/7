@@ -1,0 +1,15 @@
+﻿@startuml
+class EventureApi {
+    +string Url
+    +GetData()
+    -string secretKey
+}
+
+class AuthService {
+    +string AuthUrl
+    +Login()
+    -string password
+}
+
+EventureApi -> AuthService : Uses
+@enduml
