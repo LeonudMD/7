@@ -36,7 +36,7 @@ namespace AuthService.API.Controllers
         public async Task<IActionResult> RegisterUser(RegisterUserRequest request)
         {
             await _service.RegisterUserAsync(request.username, request.password, request.email);
-            await _kafkaProducerService.ProduceEmailRequestAsync(request.email, $"{request.username} Hui a ne is work");
+            await _kafkaProducerService.ProduceEmailRequestAsync(request.email, $"{request.username} Приземлился на сервер");
             return Ok("Пользователь был успешно зарегистрирован!");
         }
         [HttpPost("login")]
@@ -114,7 +114,7 @@ namespace AuthService.API.Controllers
         {
             await _service.DeleteAllUsers();
 
-            return Ok("Пользователи удалены нахуй");
+            return Ok("Пользователи удалены");
         }
     }
 }
