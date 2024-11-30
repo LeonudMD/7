@@ -3,6 +3,7 @@ using AuthService.Application.Contracts;
 using System.Text.Json;
 using AuthService.Domain.Models;
 using Eventure.API.Tests.Factory;
+using Eventure.Application.Contracts;
 
 namespace Eventure.API.Tests;
 
@@ -86,39 +87,95 @@ public class EventureTests
         Assert.True(users.Count >= 2);
     }
     
-    /*[Fact]
-    public async Task RefreshToken_ValidTokens_ReturnsNewTokens()
+    [Fact]
+    public async Task GetTickets_ReturnsTicketsList()
     {
-        try
-        {
-            // Arrange
-            var registerRequest = new RegisterUserRequest("testuser", "Password123!", "testuser@example.com");
-            await _httpClient.PostAsync("/auth/register", new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json"));
-
-            var loginRequest = new LoginUserRequest("testuser@example.com", "Password123!");
-            var loginResponse = await _httpClient.PostAsync("/auth/login", new StringContent(JsonSerializer.Serialize(loginRequest), Encoding.UTF8, "application/json"));
-
-            loginResponse.EnsureSuccessStatusCode();
-            var loginContent = JsonSerializer.Deserialize<Dictionary<string, string>>(await loginResponse.Content.ReadAsStringAsync());
-            Assert.NotNull(loginContent);
+        // Arrange
+        var registerRequest = EventureFactory.GetRegisterUserRequest();
+        var loginRequest = EventureFactory.GetLoginUserRequest();
         
-            _httpClient.DefaultRequestHeaders.Add("Cookie", $"tasty-cookies={loginContent["AccessToken"]}; refresh-cookies={loginContent["RefreshToken"]}");
+        await _httpClient.PostAsync("/auth/register",
+            new StringContent(JsonSerializer.Serialize(registerRequest), 
+                Encoding.UTF8,
+                "application/json"));
+        await _httpClient.PostAsync("/auth/login",
+            new StringContent(JsonSerializer.Serialize(loginRequest), 
+                Encoding.UTF8,
+                "application/json"));
 
-            // Act
-            var response = await _httpClient.PostAsync("/auth/refresh-token", null);
+        // Act
+        var response = await _httpClient.GetAsync("/eventure");
 
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var tokens = JsonSerializer.Deserialize<Dictionary<string, string>>(await response.Content.ReadAsStringAsync());
-            Assert.NotNull(tokens);
-            Assert.NotEmpty(tokens["AccessToken"]);
-            Assert.NotEmpty(tokens["RefreshToken"]);
-        }
-        catch (Exception ex)
-        {
-            Assert.Null(ex);
-        }
-    }*/
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var tickets = JsonSerializer.Deserialize<List<TicketResponse>>(await response.Content.ReadAsStringAsync());
+        Assert.NotNull(tickets);
+    }
+    [Fact]
+    public async Task GetTicket_ReturnsTicket()
+    {
+        // Arrange
+        var registerRequest = EventureFactory.GetRegisterUserRequest();
+        var loginRequest = EventureFactory.GetLoginUserRequest();
+        
+        await _httpClient.PostAsync("/auth/register",
+            new StringContent(JsonSerializer.Serialize(registerRequest), 
+                Encoding.UTF8,
+                "application/json"));
+        await _httpClient.PostAsync("/auth/login",
+            new StringContent(JsonSerializer.Serialize(loginRequest), 
+                Encoding.UTF8,
+                "application/json"));
+        
+        var content = new TicketRequest("Yandex", "Moscow", DateTime.Now, 15, 2000);
+        
+        await _httpClient.PostAsync("/", new StringContent(JsonSerializer.Serialize(content), Encoding.UTF8,
+            "application/json"));
+        
+        // Act
+        var response = await _httpClient.GetAsync("/eventure");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var tickets = JsonSerializer.Deserialize<List<TicketResponse>>(await response.Content.ReadAsStringAsync());
+        Assert.Null(tickets);
+    }
+    
+    /*// [Fact]
+    // public async Task RefreshToken_ValidTokens_ReturnsNewTokens()
+    // {
+    //     try
+    //     {
+    //         // Arrange
+    //         var registerRequest = new RegisterUserRequest("testuser", "Password123!", "testuser@example.com");
+    //         await _httpClient.PostAsync("/auth/register", new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json"));
+    //
+    //         var loginRequest = new LoginUserRequest("testuser@example.com", "Password123!");
+    //         var loginResponse = await _httpClient.PostAsync("/auth/login", new StringContent(JsonSerializer.Serialize(loginRequest), Encoding.UTF8, "application/json"));
+    //
+    //         loginResponse.EnsureSuccessStatusCode();
+    //         
+    //         Assert.Null(loginResponse);
+    //         var loginContent = JsonSerializer.Deserialize<Dictionary<string, string>>(await loginResponse.Content.ReadAsStringAsync());
+    //         Assert.NotNull(loginContent);
+    //     
+    //         _httpClient.DefaultRequestHeaders.Add("Cookie", $"tasty-cookies={loginContent["AccessToken"]}; refresh-cookies={loginContent["RefreshToken"]}");
+    //
+    //         // Act
+    //         var response = await _httpClient.PostAsync("/auth/refresh-token", null);
+    //
+    //         // Assert
+    //         response.EnsureSuccessStatusCode();
+    //         var tokens = JsonSerializer.Deserialize<Dictionary<string, string>>(await response.Content.ReadAsStringAsync());
+    //         Assert.NotNull(tokens);
+    //         Assert.NotEmpty(tokens["AccessToken"]);
+    //         Assert.NotEmpty(tokens["RefreshToken"]);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Assert.Null(ex);
+    //     }
+    // }*/
     
     [Fact]
     public async Task LogoutUser_DeletesTokens()
@@ -138,6 +195,4 @@ public class EventureTests
         // Assert
         response.EnsureSuccessStatusCode();
     }
-
-
 }

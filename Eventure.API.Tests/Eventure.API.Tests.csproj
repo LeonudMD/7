@@ -21,6 +21,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AuthService.Application\AuthService.Application.csproj" />
+      <ProjectReference Include="..\Eventure.Application\Eventure.Application.csproj" />
     </ItemGroup>
 
 </Project>
